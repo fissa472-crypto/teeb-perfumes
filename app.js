@@ -1,1 +1,2 @@
-// updated by ChatGPT
+const DEFAULT_PRODUCTS = [{"id":"bleu-edp","name":"Bleu de Chanel EDP","price":48,"category":"Men","notes":"Citrus · Woods · Amber","stock":10,"image":"data:image/jpeg;base64,REPLACE_0","color":"#0d3140","accent":"#c89b52"}];
+// Images are embedded in the product catalog in the deployed version.
