@@ -1,4 +1,5 @@
 /* TEEB Perfumes storefront — production-hardened client logic. */
+if(!window.TEEB_CATALOG){document.write('<script src="catalog.js"><\/script>');}
 const products = (window.TEEB_CATALOG || []).map(p => ({ ...p }));
 
 const money = value => `${Number(value).toFixed(2)} JOD`;
@@ -10,174 +11,23 @@ function readCart(){
   try {
     const raw = JSON.parse(localStorage.getItem('teeb_cart') || '[]');
     if (!Array.isArray(raw)) return [];
-    return raw
-      .map(i => ({ id: String(i?.id || ''), qty: Number.parseInt(i?.qty, 10) }))
-      .filter(i => getProduct(i.id) && Number.isInteger(i.qty) && i.qty > 0)
-      .map(i => ({ ...i, qty: Math.min(i.qty, Number(getProduct(i.id).stock) || 0) }))
-      .filter(i => i.qty > 0);
+    return raw.map(i => ({ id: String(i?.id || ''), qty: Number.parseInt(i?.qty, 10) })).filter(i => getProduct(i.id) && Number.isInteger(i.qty) && i.qty > 0).map(i => ({ ...i, qty: Math.min(i.qty, Number(getProduct(i.id).stock) || 0) })).filter(i => i.qty > 0);
   } catch { return []; }
 }
-
-function saveCart(items){
-  localStorage.setItem('teeb_cart', JSON.stringify(items));
-  updateCartCount();
-}
-
-function updateCartCount(){
-  const count = readCart().reduce((sum, item) => sum + item.qty, 0);
-  document.querySelectorAll('#cartCount').forEach(el => el.textContent = String(count));
-}
-
-function toast(message, type='success'){
-  let el = document.getElementById('teeb-toast');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'teeb-toast';
-    el.setAttribute('role','status');
-    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translate(-50%,12px);z-index:99999;opacity:0;transition:.2s ease;padding:13px 18px;border-radius:10px;background:#111;color:#fff;border:1px solid #c89b52;font:600 14px Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25);pointer-events:none;max-width:calc(100vw - 32px);text-align:center;';
-    document.body.appendChild(el);
-  }
-  el.textContent = message;
-  el.style.borderColor = type === 'error' ? '#c94b52' : '#c89b52';
-  clearTimeout(window.__teebToastTimer);
-  requestAnimationFrame(() => { el.style.opacity='1'; el.style.transform='translate(-50%,0)'; });
-  window.__teebToastTimer = setTimeout(() => { el.style.opacity='0'; el.style.transform='translate(-50%,12px)'; }, 2400);
-}
-
-function addToCart(id, requestedQty=1){
-  const p = getProduct(id);
-  if (!p) return toast('This product is no longer available.', 'error');
-  if (p.price == null) return toast('Price will be confirmed by TEEB.');
-  const stock = Number(p.stock) || 0;
-  if (stock <= 0) return toast('This product is sold out.', 'error');
-  const qty = Math.max(1, Number.parseInt(requestedQty,10) || 1);
-  const cart = readCart();
-  const existing = cart.find(i => i.id === id);
-  const nextQty = Math.min((existing?.qty || 0) + qty, stock);
-  if (existing) existing.qty = nextQty;
-  else cart.push({ id, qty: Math.min(qty, stock) });
-  saveCart(cart);
-  toast(nextQty < (existing?.qty || 0) + qty ? `Only ${stock} available.` : 'Product added to cart.');
-}
-
-function changeQty(n){
-  const el = document.getElementById('qty');
-  const id = el?.dataset.productId;
-  const p = getProduct(id);
-  if (!el || !p) return;
-  const current = Number.parseInt(el.textContent,10) || 1;
-  el.textContent = String(Math.min(Math.max(1, current + n), Number(p.stock) || 1));
-}
-
-function addDetail(id){
-  const qtyEl = document.getElementById('qty');
-  addToCart(id, Number.parseInt(qtyEl?.textContent || '1',10));
-  if (getProduct(id)?.price != null) window.location.href = 'cart.html';
-}
-
-function productCard(p){
-  const canBuy = p.price != null && Number(p.stock) > 0;
-  const sold = Number(p.stock) <= 0;
-  return `<article class="card">
-    <div class="card-img" style="overflow:hidden;background:#fff">
-      <img src="${imageSrc(p.image)}" alt="${p.name.replace(/"/g,'&quot;')}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;border-radius:12px">
-      ${sold ? '<span class="sold">SOLD OUT</span>' : ''}
-    </div>
-    <div class="eyebrow" style="margin-top:14px">${p.category} · ${p.size || '—'}</div>
-    <h3>${p.name}</h3>
-    <div class="notes">${p.notes}</div>
-    <div class="price-row"><span class="price">${displayPrice(p)}</span><span class="notes">${sold ? 'Unavailable' : `${p.stock} in stock`}</span></div>
-    ${canBuy ? `<button class="btn btn-primary" onclick="addToCart('${p.id}')">ADD TO CART</button>` : sold ? '<div class="status sold-status" style="display:block;margin-top:12px;text-align:center">SOLD OUT</div>' : `<button class="btn btn-outline" onclick="toast('Price will be confirmed by TEEB.')">PRICE ON REQUEST</button>`}
-    <a class="btn btn-outline" style="width:100%;margin-top:8px" href="product.html?id=${encodeURIComponent(p.id)}">VIEW DETAILS</a>
-  </article>`;
-}
-
-function renderHome(){
-  const el = document.getElementById('featured');
-  if (el) el.innerHTML = products.slice(0,8).map(productCard).join('');
-}
-
-function renderShop(){
-  const el = document.getElementById('shopProducts');
-  if (!el) return;
-  const q = (document.getElementById('search')?.value || '').trim().toLowerCase();
-  const category = document.getElementById('category')?.value || 'All';
-  const inStock = Boolean(document.getElementById('inStock')?.checked);
-  const sort = document.getElementById('sort')?.value || 'new';
-  let list = products.filter(p => `${p.name} ${p.notes}`.toLowerCase().includes(q) && (category === 'All' || p.category === category) && (!inStock || Number(p.stock) > 0));
-  if (sort === 'low') list = [...list].sort((a,b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-  if (sort === 'high') list = [...list].sort((a,b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
-  el.innerHTML = list.length ? list.map(productCard).join('') : '<div class="card"><h3>No fragrances found</h3><p class="notes">Try another search or category.</p></div>';
-}
-
-function renderProduct(){
-  const el = document.getElementById('productPage');
-  if (!el) return;
-  const id = new URLSearchParams(location.search).get('id');
-  const p = getProduct(id) || products[0];
-  if (!p) { el.innerHTML = '<div class="card"><h2>Product unavailable</h2><a class="btn btn-primary" href="shop.html">BACK TO SHOP</a></div>'; return; }
-  const canBuy = p.price != null && Number(p.stock) > 0;
-  el.innerHTML = `<section class="product-detail">
-    <div class="detail-image" style="padding:25px;background:#fff;overflow:hidden"><img src="${imageSrc(p.image)}" alt="${p.name}" style="width:100%;height:100%;max-height:560px;object-fit:contain" loading="eager"></div>
-    <div class="detail"><div class="eyebrow">${p.category} · ${p.size || '—'} · TEEB</div><h1>${p.name}</h1><div class="notes" style="font-size:16px">${p.notes}</div><div class="bigprice">${displayPrice(p)}</div>
-    <p>Premium fragrance selected for the TEEB collection. A distinctive scent designed to leave a memorable impression.</p><hr><h4>Size</h4><div class="option-row"><button class="option selected">${p.size || '—'}</button></div>
-    ${canBuy ? `<h4>Quantity</h4><div class="qty"><button aria-label="Decrease quantity" onclick="changeQty(-1)">−</button><span id="qty" data-product-id="${p.id}">1</span><button aria-label="Increase quantity" onclick="changeQty(1)">+</button></div><button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="addDetail('${p.id}')">ADD TO CART</button>` : p.price == null ? `<button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="toast('Price will be confirmed by TEEB.')">CONTACT FOR PRICE</button>` : '<div class="status sold-status" style="display:block;margin-top:22px;text-align:center">SOLD OUT</div>'}
-    <div class="card" style="margin-top:20px"><b>🚚 Free delivery over 50 JOD</b><br><span class="notes">Cash on delivery available across Jordan.</span></div></div></section>`;
-}
-
-function renderCart(){
-  const el = document.getElementById('cartItems');
-  if (!el) return;
-  const cart = readCart();
-  saveCart(cart);
-  if (!cart.length) {
-    el.innerHTML = '<h2>Your cart is empty</h2><p class="notes">Browse our fragrances and find your signature scent.</p><a class="btn btn-primary" href="shop.html">SHOP FRAGRANCES</a>';
-    const summary = document.getElementById('cartSummary'); if (summary) summary.innerHTML = '';
-    return;
-  }
-  el.innerHTML = cart.map(i => { const p=getProduct(i.id); return `<div class="cart-row"><div class="thumb"><img src="${imageSrc(p.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain"></div><div><b>${p.name}</b><div class="notes">${p.notes} · ${p.size||''}</div></div><div>${displayPrice(p)}</div><div class="qty"><button aria-label="Decrease quantity" onclick="cartChange('${p.id}',-1)">−</button><span>${i.qty}</span><button aria-label="Increase quantity" onclick="cartChange('${p.id}',1)">+</button></div><button aria-label="Remove ${p.name}" onclick="removeCart('${p.id}')" style="border:0;background:none;cursor:pointer">🗑</button></div>`; }).join('');
-  const priced = cart.every(i => getProduct(i.id)?.price != null);
-  const subtotal = cart.reduce((sum,i) => sum + (Number(getProduct(i.id)?.price) || 0) * i.qty, 0);
-  const delivery = subtotal >= 50 ? 0 : 2;
-  const summary = document.getElementById('cartSummary');
-  if (summary) summary.innerHTML = `<h2>Order Summary</h2><div class="summary-line"><span>Subtotal</span><b>${money(subtotal)}</b></div><div class="summary-line"><span>Delivery</span><b>${money(delivery)}</b></div><div class="total">Total <span style="float:right">${money(subtotal+delivery)}</span></div>${priced ? '<button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="location.href=\'checkout.html\'">PROCEED TO CHECKOUT</button>' : '<div class="notes" style="margin-top:18px">One or more items are awaiting price confirmation. Checkout will be available once pricing is confirmed.</div>'}`;
-}
-
-function cartChange(id,n){
-  const p=getProduct(id); if(!p) return removeCart(id);
-  const cart=readCart(), item=cart.find(i=>i.id===id); if(!item) return;
-  item.qty=Math.min(Math.max(1,item.qty+n),Number(p.stock)||1); saveCart(cart); renderCart();
-}
-function removeCart(id){ saveCart(readCart().filter(i=>i.id!==id)); renderCart(); }
-
-function checkoutSummary(){
-  const el=document.getElementById('checkoutSummary'); if(!el) return;
-  const cart=readCart();
-  const invalid=cart.some(i=>getProduct(i.id)?.price==null);
-  const subtotal=cart.reduce((sum,i)=>sum+(Number(getProduct(i.id)?.price)||0)*i.qty,0);
-  const delivery=subtotal>=50?0:2;
-  el.innerHTML='<h2>Order Summary</h2>'+cart.map(i=>`<div class="summary-line"><span>${getProduct(i.id).name} × ${i.qty}</span><b>${money((Number(getProduct(i.id).price)||0)*i.qty)}</b></div>`).join('')+`<div class="summary-line"><span>Delivery</span><b>${money(delivery)}</b></div><div class="total">Total <span style="float:right">${money(subtotal+delivery)}</span></div>${invalid?'<p class="notes" style="margin-top:15px">Pricing is being confirmed for one or more items. Please return to the shop.</p>':''}`;
-  const button=document.getElementById('placeOrderButton'); if(button) button.disabled=invalid || !cart.length;
-}
-
-function renderAdmin(){
-  const body=document.getElementById('adminProducts'); if(!body) return;
-  const q=(document.getElementById('adminSearch')?.value||'').trim().toLowerCase();
-  const list=products.filter(p=>`${p.name} ${p.category} ${p.notes}`.toLowerCase().includes(q));
-  body.innerHTML=list.map(p=>`<tr><td><div style="display:flex;align-items:center;gap:10px"><img src="${imageSrc(p.image)}" alt="" loading="lazy" style="width:45px;height:45px;object-fit:contain;background:#fff;border-radius:7px"><div><b>${p.name}</b><div class="notes">${p.notes} · ${p.size||''}</div></div></div></td><td>${p.category}</td><td>${displayPrice(p)}</td><td>${p.stock}</td><td><span class="status ${p.stock?'active-status':'sold-status'}">${p.stock?'Active':'Sold Out'}</span></td><td><span class="notes">Catalog controlled in source</span></td></tr>`).join('');
-  const count=document.getElementById('adminProductCount'); if(count) count.textContent=String(products.length);
-  const sold=document.getElementById('adminSoldOut'); if(sold) sold.textContent=String(products.filter(p=>Number(p.stock)<=0).length);
-}
-
-function bindFilters(){
-  ['search','category','sort','inStock'].forEach(id=>document.getElementById(id)?.addEventListener(id==='search'?'input':'change',renderShop));
-  document.querySelectorAll('.cat').forEach(x=>x.addEventListener('change',()=>{ document.querySelectorAll('.cat').forEach(y=>{if(y!==x)y.checked=false}); const select=document.getElementById('category'); if(select) select.value=x.checked?x.value:'All'; renderShop(); }));
-  const params=new URLSearchParams(location.search); const category=params.get('category');
-  if(category && ['Men','Women','Unisex'].includes(category)){ const select=document.getElementById('category'); if(select){select.value=category;renderShop();} }
-}
-
-document.addEventListener('DOMContentLoaded',()=>{
-  updateCartCount();
-  renderHome(); renderShop(); renderProduct(); renderCart(); checkoutSummary(); renderAdmin(); bindFilters();
-  document.getElementById('adminSearch')?.addEventListener('input',renderAdmin);
-});
+function saveCart(items){ localStorage.setItem('teeb_cart', JSON.stringify(items)); updateCartCount(); }
+function updateCartCount(){ const count=readCart().reduce((sum,item)=>sum+item.qty,0); document.querySelectorAll('#cartCount').forEach(el=>el.textContent=String(count)); }
+function toast(message,type='success'){ let el=document.getElementById('teeb-toast'); if(!el){el=document.createElement('div');el.id='teeb-toast';el.setAttribute('role','status');el.style.cssText='position:fixed;left:50%;bottom:24px;transform:translate(-50%,12px);z-index:99999;opacity:0;transition:.2s ease;padding:13px 18px;border-radius:10px;background:#111;color:#fff;border:1px solid #c89b52;font:600 14px Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25);pointer-events:none;max-width:calc(100vw - 32px);text-align:center;';document.body.appendChild(el);} el.textContent=message;el.style.borderColor=type==='error'?'#c94b52':'#c89b52';clearTimeout(window.__teebToastTimer);requestAnimationFrame(()=>{el.style.opacity='1';el.style.transform='translate(-50%,0)';});window.__teebToastTimer=setTimeout(()=>{el.style.opacity='0';el.style.transform='translate(-50%,12px)';},2400); }
+function addToCart(id,requestedQty=1){ const p=getProduct(id); if(!p)return toast('This product is no longer available.','error'); if(p.price==null)return toast('Price will be confirmed by TEEB.'); const stock=Number(p.stock)||0;if(stock<=0)return toast('This product is sold out.','error');const qty=Math.max(1,Number.parseInt(requestedQty,10)||1);const cart=readCart();const existing=cart.find(i=>i.id===id);const before=existing?.qty||0;const nextQty=Math.min(before+qty,stock);if(existing)existing.qty=nextQty;else cart.push({id,qty:Math.min(qty,stock)});saveCart(cart);toast(nextQty<before+qty?`Only ${stock} available.`:'Product added to cart.'); }
+function changeQty(n){const el=document.getElementById('qty');const id=el?.dataset.productId;const p=getProduct(id);if(!el||!p)return;const current=Number.parseInt(el.textContent,10)||1;el.textContent=String(Math.min(Math.max(1,current+n),Number(p.stock)||1));}
+function addDetail(id){const qtyEl=document.getElementById('qty');addToCart(id,Number.parseInt(qtyEl?.textContent||'1',10));if(getProduct(id)?.price!=null)window.location.href='cart.html';}
+function productCard(p){const canBuy=p.price!=null&&Number(p.stock)>0;const sold=Number(p.stock)<=0;return `<article class="card"><div class="card-img" style="overflow:hidden;background:#fff"><img src="${imageSrc(p.image)}" alt="${p.name.replace(/"/g,'&quot;')}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:contain;border-radius:12px">${sold?'<span class="sold">SOLD OUT</span>':''}</div><div class="eyebrow" style="margin-top:14px">${p.category} · ${p.size||'—'}</div><h3>${p.name}</h3><div class="notes">${p.notes}</div><div class="price-row"><span class="price">${displayPrice(p)}</span><span class="notes">${sold?'Unavailable':`${p.stock} in stock`}</span></div>${canBuy?`<button class="btn btn-primary" onclick="addToCart('${p.id}')">ADD TO CART</button>`:sold?'<div class="status sold-status" style="display:block;margin-top:12px;text-align:center">SOLD OUT</div>':`<button class="btn btn-outline" onclick="toast('Price will be confirmed by TEEB.')">PRICE ON REQUEST</button>`}<a class="btn btn-outline" style="width:100%;margin-top:8px" href="product.html?id=${encodeURIComponent(p.id)}">VIEW DETAILS</a></article>`;}
+function renderHome(){const el=document.getElementById('featured');if(el)el.innerHTML=products.slice(0,8).map(productCard).join('');}
+function renderShop(){const el=document.getElementById('shopProducts');if(!el)return;const q=(document.getElementById('search')?.value||'').trim().toLowerCase();const category=document.getElementById('category')?.value||'All';const inStock=Boolean(document.getElementById('inStock')?.checked);const sort=document.getElementById('sort')?.value||'new';let list=products.filter(p=>`${p.name} ${p.notes}`.toLowerCase().includes(q)&&(category==='All'||p.category===category)&&(!inStock||Number(p.stock)>0));if(sort==='low')list=[...list].sort((a,b)=>(a.price??Infinity)-(b.price??Infinity));if(sort==='high')list=[...list].sort((a,b)=>(b.price??-Infinity)-(a.price??-Infinity));el.innerHTML=list.length?list.map(productCard).join(''):'<div class="card"><h3>No fragrances found</h3><p class="notes">Try another search or category.</p></div>';}
+function renderProduct(){const el=document.getElementById('productPage');if(!el)return;const id=new URLSearchParams(location.search).get('id');const p=getProduct(id)||products[0];if(!p){el.innerHTML='<div class="card"><h2>Product unavailable</h2><a class="btn btn-primary" href="shop.html">BACK TO SHOP</a></div>';return;}const canBuy=p.price!=null&&Number(p.stock)>0;el.innerHTML=`<section class="product-detail"><div class="detail-image" style="padding:25px;background:#fff;overflow:hidden"><img src="${imageSrc(p.image)}" alt="${p.name}" style="width:100%;height:100%;max-height:560px;object-fit:contain" loading="eager"></div><div class="detail"><div class="eyebrow">${p.category} · ${p.size||'—'} · TEEB</div><h1>${p.name}</h1><div class="notes" style="font-size:16px">${p.notes}</div><div class="bigprice">${displayPrice(p)}</div><p>Premium fragrance selected for the TEEB collection. A distinctive scent designed to leave a memorable impression.</p><hr><h4>Size</h4><div class="option-row"><button class="option selected">${p.size||'—'}</button></div>${canBuy?`<h4>Quantity</h4><div class="qty"><button aria-label="Decrease quantity" onclick="changeQty(-1)">−</button><span id="qty" data-product-id="${p.id}">1</span><button aria-label="Increase quantity" onclick="changeQty(1)">+</button></div><button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="addDetail('${p.id}')">ADD TO CART</button>`:p.price==null?`<button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="toast('Price will be confirmed by TEEB.')">CONTACT FOR PRICE</button>`:'<div class="status sold-status" style="display:block;margin-top:22px;text-align:center">SOLD OUT</div>'}<div class="card" style="margin-top:20px"><b>🚚 Free delivery over 50 JOD</b><br><span class="notes">Cash on delivery available across Jordan.</span></div></div></section>`;}
+function renderCart(){const el=document.getElementById('cartItems');if(!el)return;const cart=readCart();saveCart(cart);if(!cart.length){el.innerHTML='<h2>Your cart is empty</h2><p class="notes">Browse our fragrances and find your signature scent.</p><a class="btn btn-primary" href="shop.html">SHOP FRAGRANCES</a>';const summary=document.getElementById('cartSummary');if(summary)summary.innerHTML='';return;}el.innerHTML=cart.map(i=>{const p=getProduct(i.id);return `<div class="cart-row"><div class="thumb"><img src="${imageSrc(p.image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:contain"></div><div><b>${p.name}</b><div class="notes">${p.notes} · ${p.size||''}</div></div><div>${displayPrice(p)}</div><div class="qty"><button aria-label="Decrease quantity" onclick="cartChange('${p.id}',-1)">−</button><span>${i.qty}</span><button aria-label="Increase quantity" onclick="cartChange('${p.id}',1)">+</button></div><button aria-label="Remove ${p.name}" onclick="removeCart('${p.id}')" style="border:0;background:none;cursor:pointer">🗑</button></div>`;}).join('');const priced=cart.every(i=>getProduct(i.id)?.price!=null);const subtotal=cart.reduce((sum,i)=>sum+(Number(getProduct(i.id)?.price)||0)*i.qty,0);const delivery=subtotal>=50?0:2;const summary=document.getElementById('cartSummary');if(summary)summary.innerHTML=`<h2>Order Summary</h2><div class="summary-line"><span>Subtotal</span><b>${money(subtotal)}</b></div><div class="summary-line"><span>Delivery</span><b>${money(delivery)}</b></div><div class="total">Total <span style="float:right">${money(subtotal+delivery)}</span></div>${priced?'<button class="btn btn-primary" style="width:100%;margin-top:22px" onclick="location.href=\'checkout.html\'">PROCEED TO CHECKOUT</button>':'<div class="notes" style="margin-top:18px">One or more items are awaiting price confirmation. Checkout will be available once pricing is confirmed.</div>'}`;}
+function cartChange(id,n){const p=getProduct(id);if(!p)return removeCart(id);const cart=readCart(),item=cart.find(i=>i.id===id);if(!item)return;item.qty=Math.min(Math.max(1,item.qty+n),Number(p.stock)||1);saveCart(cart);renderCart();}
+function removeCart(id){saveCart(readCart().filter(i=>i.id!==id));renderCart();}
+function checkoutSummary(){const el=document.getElementById('checkoutSummary');if(!el)return;const cart=readCart();const invalid=cart.some(i=>getProduct(i.id)?.price==null);const subtotal=cart.reduce((sum,i)=>sum+(Number(getProduct(i.id)?.price)||0)*i.qty,0);const delivery=subtotal>=50?0:2;el.innerHTML='<h2>Order Summary</h2>'+cart.map(i=>`<div class="summary-line"><span>${getProduct(i.id).name} × ${i.qty}</span><b>${money((Number(getProduct(i.id).price)||0)*i.qty)}</b></div>`).join('')+`<div class="summary-line"><span>Delivery</span><b>${money(delivery)}</b></div><div class="total">Total <span style="float:right">${money(subtotal+delivery)}</span></div>${invalid?'<p class="notes" style="margin-top:15px">Pricing is being confirmed for one or more items. Please return to the shop.</p>':''}`;const button=document.getElementById('placeOrderButton');if(button)button.disabled=invalid||!cart.length;}
+function renderAdmin(){const body=document.getElementById('adminProducts');if(!body)return;const q=(document.getElementById('adminSearch')?.value||'').trim().toLowerCase();const list=products.filter(p=>`${p.name} ${p.category} ${p.notes}`.toLowerCase().includes(q));body.innerHTML=list.map(p=>`<tr><td><div style="display:flex;align-items:center;gap:10px"><img src="${imageSrc(p.image)}" alt="" loading="lazy" style="width:45px;height:45px;object-fit:contain;background:#fff;border-radius:7px"><div><b>${p.name}</b><div class="notes">${p.notes} · ${p.size||''}</div></div></div></td><td>${p.category}</td><td>${displayPrice(p)}</td><td>${p.stock}</td><td><span class="status ${p.stock?'active-status':'sold-status'}">${p.stock?'Active':'Sold Out'}</span></td><td><span class="notes">Catalog controlled in source</span></td></tr>`).join('');const count=document.getElementById('adminProductCount');if(count)count.textContent=String(products.length);const sold=document.getElementById('adminSoldOut');if(sold)sold.textContent=String(products.filter(p=>Number(p.stock)<=0).length);}
+function bindFilters(){['search','category','sort','inStock'].forEach(id=>document.getElementById(id)?.addEventListener(id==='search'?'input':'change',renderShop));document.querySelectorAll('.cat').forEach(x=>x.addEventListener('change',()=>{document.querySelectorAll('.cat').forEach(y=>{if(y!==x)y.checked=false});const select=document.getElementById('category');if(select)select.value=x.checked?x.value:'All';renderShop();}));const params=new URLSearchParams(location.search);const category=params.get('category');if(category&&['Men','Women','Unisex'].includes(category)){const select=document.getElementById('category');if(select){select.value=category;renderShop();}}}
+document.addEventListener('DOMContentLoaded',()=>{updateCartCount();renderHome();renderShop();renderProduct();renderCart();checkoutSummary();renderAdmin();bindFilters();document.getElementById('adminSearch')?.addEventListener('input',renderAdmin);});
