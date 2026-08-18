@@ -1,0 +1,51 @@
+function setCheckoutError(message){const el=document.getElementById('orderError');if(!el)return;el.textContent=message;el.style.display='block';}
+function clearCheckoutError(){const el=document.getElementById('orderError');if(el){el.textContent='';el.style.display='none';}}
+function textNode(parent,label,value){const p=document.createElement('p');const b=document.createElement('b');b.textContent=label; p.append(b,document.createTextNode(` ${value}`));parent.appendChild(p);}
+function renderConfirmation(data){
+  const box=document.getElementById('orderConfirmation'); if(!box)return;
+  box.replaceChildren();
+  const h=document.createElement('h2');h.textContent='Order Received ✓';box.appendChild(h);
+  const success=document.createElement('p');success.className='order-success';success.textContent=`Thank you, ${data.customer.name}! Your order has been placed successfully.`;box.appendChild(success);
+  const h3=document.createElement('h3');h3.textContent='Customer Information';box.appendChild(h3);
+  const customerBox=document.createElement('div');customerBox.className='customer-box';
+  textNode(customerBox,'Name:',data.customer.name);textNode(customerBox,'Phone:',data.customer.phone);textNode(customerBox,'Email:',data.customer.email);textNode(customerBox,'Governorate:',data.customer.governorate);textNode(customerBox,'Area:',data.customer.area);textNode(customerBox,'Street Address:',data.customer.address);if(data.customer.details)textNode(customerBox,'Additional Details:',data.customer.details);box.appendChild(customerBox);
+  const oh=document.createElement('h3');oh.textContent='Order Details';box.appendChild(oh);
+  data.order.items.forEach(item=>{const row=document.createElement('div');row.className='order-item';const a=document.createElement('span');a.textContent=`${item.name} × ${item.qty}`;const b=document.createElement('span');b.textContent=`${item.lineTotal.toFixed(2)} JOD`;row.append(a,b);box.appendChild(row);});
+  const delivery=document.createElement('div');delivery.className='order-item';delivery.innerHTML='<span>Delivery</span>';const db=document.createElement('span');db.textContent=`${data.order.delivery.toFixed(2)} JOD`;delivery.appendChild(db);box.appendChild(delivery);
+  const total=document.createElement('div');total.className='order-total';total.textContent=`Total: ${data.order.total.toFixed(2)} JOD`;box.appendChild(total);
+  const pay=document.createElement('p');pay.style.marginTop='18px';const pb=document.createElement('b');pb.textContent='Payment:';pay.append(pb,document.createTextNode(' Cash on Delivery'));box.appendChild(pay);
+  const note=document.createElement('p');note.textContent='We will contact you to confirm the delivery.';box.appendChild(note);
+  const link=document.createElement('a');link.className='btn btn-primary back-shop';link.href='shop.html';link.textContent='CONTINUE SHOPPING';box.appendChild(link);
+  document.getElementById('checkoutLayout').style.display='none';box.style.display='block';window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function placeOrder(){
+  clearCheckoutError();
+  const button=document.getElementById('placeOrderButton');
+  const cart=readCart();
+  const email=document.getElementById('customerEmail')?.value.trim()||'';
+  const name=document.getElementById('customerName')?.value.trim()||'';
+  const phone=document.getElementById('customerPhone')?.value.trim()||'';
+  const governorate=document.getElementById('customerGovernorate')?.value||'';
+  const area=document.getElementById('customerArea')?.value.trim()||'';
+  const address=document.getElementById('customerAddress')?.value.trim()||'';
+  const details=document.getElementById('customerDetails')?.value.trim()||'';
+  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setCheckoutError('Please enter a valid email address.');
+  if(!name || !phone || !area || !address) return setCheckoutError('Please complete all required fields before placing your order.');
+  if(!cart.length) return setCheckoutError('Your cart is empty.');
+  if(cart.some(i=>getProduct(i.id)?.price==null)) return setCheckoutError('One or more products are awaiting price confirmation. Please return to the shop.');
+  if(button){button.disabled=true;button.textContent='PLACING ORDER...';}
+  try{
+    const response=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({customer:{email,name,phone,governorate,area,address,details},items:cart,website:''})});
+    const result=await response.json().catch(()=>({success:false}));
+    if(!response.ok || !result.success) throw new Error(result.error || 'Order failed');
+    renderConfirmation({customer:{email,name,phone,governorate,area,address,details},order:result.order});
+    saveCart([]);
+  }catch(error){
+    console.error(error);
+    setCheckoutError(error.message === 'Failed to fetch' ? 'We could not reach the order service. Please try again.' : (error.message || 'We could not send the order right now. Please try again.'));
+    if(button){button.disabled=false;button.textContent='PLACE ORDER';}
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{checkoutSummary();const button=document.getElementById('placeOrderButton');if(button)button.addEventListener('click',placeOrder);});
