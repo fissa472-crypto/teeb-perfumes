@@ -10,7 +10,7 @@
       toast.style.cssText='position:fixed;top:24px;right:24px;z-index:99999;background:#111;color:#fff;padding:14px 22px;border:1px solid #c89b52;border-radius:10px;font:600 14px Arial,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25);opacity:0;transform:translateY(-10px);transition:opacity .2s ease,transform .2s ease;pointer-events:none;';
       document.body.appendChild(toast);
     }
-    toast.textContent='تمت إضافة المنتج إلى السلة';
+    toast.textContent='Product added to cart successfully.';
     clearTimeout(window.__teebToastTimer);
     requestAnimationFrame(()=>{toast.style.opacity='1';toast.style.transform='translateY(0)';});
     window.__teebToastTimer=setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(-10px)';},2200);
