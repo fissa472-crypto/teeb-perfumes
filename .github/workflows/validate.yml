@@ -18,3 +18,10 @@ jobs:
           node --check app.js
           node --check checkout.js
           node --check api/order.js
+          node --check admin-auth.js
+          node --check admin-products.js
+          node --check admin-orders.js
+          node --check cart-message.js
+          node --check collection-filter.js
+          node --check image-fix.js
+          node --check toast.js
