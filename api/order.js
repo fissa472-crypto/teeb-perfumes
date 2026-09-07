@@ -18,13 +18,14 @@ module.exports=async function handler(req,res){
   const data=await db.json().catch(()=>null);if(!db.ok){console.error('Supabase order error',data);return json(res,db.status===400?400:502,{success:false,error:data?.message||'We could not save your order. Please try again.'});}
   const order=data;
   const items=Array.isArray(order?.items)?order.items:[];
-  if(!items.length)return json(res,200,{success:true,warning:'Order saved but confirmation details were incomplete.',order:{id:order.id,items:[],subtotal:Number(order.subtotal),delivery:Number(order.delivery),total:Number(order.total),payment:'Cash on Delivery'}});
+  const discount=Number(order?.discount||0);
+  if(!items.length)return json(res,200,{success:true,warning:'Order saved but confirmation details were incomplete.',order:{id:order.id,items:[],subtotal:Number(order.subtotal),discount,delivery:Number(order.delivery),total:Number(order.total),payment:'Cash on Delivery'}});
   const lines=items.map(i=>`${clean(i.name,120)} × ${Number(i.qty)||1} — ${Number(i.lineTotal||0).toFixed(2)} JOD`).join('\n');
   let notificationWarning='';
   try{
-   const email=await fetch('https://formsubmit.co/ajax/perfumesteeb@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({name:c.name,email:c.email,phone:c.phone,governorate:c.governorate,area:c.area,address:c.address,additional_details:c.details||'None',order_items:lines,subtotal:`${Number(order.subtotal).toFixed(2)} JOD`,delivery:`${Number(order.delivery).toFixed(2)} JOD`,total:`${Number(order.total).toFixed(2)} JOD`,payment:'Cash on Delivery',_subject:`New TEEB Perfumes Order - ${c.name}`,_template:'table',_captcha:'false'})});
+   const email=await fetch('https://formsubmit.co/ajax/perfumesteeb@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({name:c.name,email:c.email,phone:c.phone,governorate:c.governorate,area:c.area,address:c.address,additional_details:c.details||'None',order_items:lines,subtotal:`${Number(order.subtotal).toFixed(2)} JOD`,discount:`${discount.toFixed(2)} JOD`,delivery:`${Number(order.delivery).toFixed(2)} JOD`,total:`${Number(order.total).toFixed(2)} JOD`,payment:'Cash on Delivery',_subject:`New TEEB Perfumes Order - ${c.name}`,_template:'table',_captcha:'false'})});
    const mail=await email.json().catch(()=>({}));if(!email.ok||mail.success===false)notificationWarning='Order saved, but the notification email failed.';
   }catch(e){console.error('Notification email error',e);notificationWarning='Order saved, but the notification email failed.';}
-  return json(res,200,{success:true,warning:notificationWarning||undefined,order:{id:order.id,items,subtotal:Number(order.subtotal),delivery:Number(order.delivery),total:Number(order.total),payment:'Cash on Delivery'}});
+  return json(res,200,{success:true,warning:notificationWarning||undefined,order:{id:order.id,items,subtotal:Number(order.subtotal),discount,delivery:Number(order.delivery),total:Number(order.total),payment:'Cash on Delivery'}});
  }catch(error){console.error(error);return json(res,500,{success:false,error:'Unable to process the order right now.'});}
 };
