@@ -1,11 +1,12 @@
 const SUPABASE_URL='https://qjcghudjcagpbywmtlnp.supabase.co';
-const SUPABASE_KEY=process.env.SUPABASE_PUBLISHABLE_KEY||'sb_publishable_032jnom6xlHAABnfHL9a6Q_4i1wzXNs';
+const SUPABASE_KEY=process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ALLOWED_GOVERNORATES=new Set(['Amman','Balqa','Irbid','Zarqa','Mafraq','Jerash','Ajloun','Madaba','Karak','Tafilah',"Ma'an",'Aqaba']);
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function json(res,status,body){res.status(status).setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');return res.end(JSON.stringify(body));}
 function clean(value,max=500){return String(value??'').trim().slice(0,max);}
 module.exports=async function handler(req,res){
  if(req.method!=='POST')return json(res,405,{success:false,error:'Method not allowed'});
+ if(!SUPABASE_KEY){console.error('SUPABASE_SERVICE_ROLE_KEY is not configured');return json(res,503,{success:false,error:'Order service is temporarily unavailable.'});}
  try{
   const body=typeof req.body==='object'&&req.body?req.body:JSON.parse(req.body||'{}');
   if(clean(body.website,200))return json(res,400,{success:false,error:'Invalid request.'});
