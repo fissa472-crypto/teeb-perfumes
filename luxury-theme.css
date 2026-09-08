@@ -4,6 +4,9 @@ body{background:linear-gradient(135deg,#f6f0e7 0%,#e9dfd1 55%,#f4ede3 100%);colo
 /* Announcement bar intentionally removed across the storefront. */
 body:not(:has(.admin)) .topbar{display:none!important}
 body:not(:has(.admin)) .nav{background:rgba(248,243,235,.96);border-bottom:1px solid #d9cbb8;box-shadow:0 5px 22px rgba(53,37,20,.055)}
+/* Blend the white pixels in the logo artwork into the warm beige header so no white box is visible. */
+body:not(:has(.admin)) .brand{background:transparent!important}
+body:not(:has(.admin)) .brand img{background:transparent!important;mix-blend-mode:multiply;display:block}
 body:not(:has(.admin)) .navlinks a{position:relative;transition:color .25s ease,transform .25s ease}
 body:not(:has(.admin)) .navlinks a:after{content:"";position:absolute;left:50%;bottom:-8px;width:0;height:1px;background:#b77b2d;transform:translateX(-50%);transition:width .28s ease}
 body:not(:has(.admin)) .navlinks a:hover:after,body:not(:has(.admin)) .navlinks a.active:after{width:100%}
