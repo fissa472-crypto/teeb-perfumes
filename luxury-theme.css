@@ -1,6 +1,8 @@
 /* TEEB luxury storefront theme — public pages only */
 :root{--lux-bg:#eee5d8;--lux-paper:#f7f1e8;--lux-gold:#b77b2d;--lux-ink:#17130f;--lux-line:#d8c8b3}
 body{background:linear-gradient(135deg,#f6f0e7 0%,#e9dfd1 55%,#f4ede3 100%);color:var(--lux-ink)}
+/* Announcement bar intentionally removed across the storefront. */
+body:not(:has(.admin)) .topbar{display:none!important}
 body:not(:has(.admin)) .nav{background:rgba(248,243,235,.96);border-bottom:1px solid #d9cbb8;box-shadow:0 5px 22px rgba(53,37,20,.055)}
 body:not(:has(.admin)) .navlinks a{position:relative;transition:color .25s ease,transform .25s ease}
 body:not(:has(.admin)) .navlinks a:after{content:"";position:absolute;left:50%;bottom:-8px;width:0;height:1px;background:#b77b2d;transform:translateX(-50%);transition:width .28s ease}
