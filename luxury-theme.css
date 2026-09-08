@@ -2,6 +2,9 @@
 :root{--lux-bg:#eee5d8;--lux-paper:#f7f1e8;--lux-gold:#b77b2d;--lux-ink:#17130f;--lux-line:#d8c8b3}
 body{background:linear-gradient(135deg,#f6f0e7 0%,#e9dfd1 55%,#f4ede3 100%);color:var(--lux-ink)}
 body:not(:has(.admin)) .nav{background:rgba(248,243,235,.96);border-bottom:1px solid #d9cbb8;box-shadow:0 5px 22px rgba(53,37,20,.055)}
+body:not(:has(.admin)) .navlinks a{position:relative;transition:color .25s ease,transform .25s ease}
+body:not(:has(.admin)) .navlinks a:after{content:"";position:absolute;left:50%;bottom:-8px;width:0;height:1px;background:#b77b2d;transform:translateX(-50%);transition:width .28s ease}
+body:not(:has(.admin)) .navlinks a:hover:after,body:not(:has(.admin)) .navlinks a.active:after{width:100%}
 body:not(:has(.admin)) .navlinks a:hover,body:not(:has(.admin)) .navlinks a.active{color:#a96e22}
 body:not(:has(.admin)) .cart-badge{background:#17130f}
 body:not(:has(.admin)) .section,body:not(:has(.admin)) .pagehead{background:transparent}
@@ -10,9 +13,13 @@ body:not(:has(.admin)) .card-img,body:not(:has(.admin)) .detail-image{background
 body:not(:has(.admin)) .btn-primary,body:not(:has(.admin)) .card .btn-primary{background:linear-gradient(100deg,#17130f,#2c2117);box-shadow:0 8px 20px rgba(34,24,15,.13)}
 body:not(:has(.admin)) .price,body:not(:has(.admin)) .bigprice,body:not(:has(.admin)) .eyebrow{color:#a96e22}
 body:not(:has(.admin)) .feature-strip{background:#efe5d7;border-color:#d8c8b3}
-body:not(:has(.admin)) .banner{background:linear-gradient(115deg,#17130f 0%,#302217 55%,#4a3320 100%);box-shadow:0 18px 45px rgba(31,21,13,.15)}
+body:not(:has(.admin)) .banner{position:relative;overflow:hidden;background:linear-gradient(115deg,#17130f 0%,#302217 55%,#4a3320 100%);box-shadow:0 18px 45px rgba(31,21,13,.15);transition:transform .35s ease,box-shadow .35s ease}
+body:not(:has(.admin)) .banner:after{content:"";position:absolute;top:-60%;left:-35%;width:25%;height:220%;background:linear-gradient(90deg,transparent,rgba(255,220,160,.12),transparent);transform:rotate(18deg);animation:teebShine 7s ease-in-out infinite}
+body:not(:has(.admin)) .banner:hover{transform:translateY(-4px);box-shadow:0 24px 54px rgba(31,21,13,.2)}
 body:not(:has(.admin)) .footer{background:linear-gradient(120deg,#110e0b 0%,#21170f 58%,#0e0c0a 100%);border-top:1px solid rgba(190,139,70,.28)}
 body:not(:has(.admin)) .footer p,body:not(:has(.admin)) .footer a{color:#c8bbae}
+body:not(:has(.admin)) .footer a{transition:color .22s ease,transform .22s ease;display:inline-block}
+body:not(:has(.admin)) .footer a:hover{color:#e0b66f;transform:translateX(3px)}
 body:not(:has(.admin)) .footer h4{color:#f5eadc}
 body:not(:has(.admin)) .copyright{color:#9e9082;border-color:rgba(255,255,255,.09)}
 body:not(:has(.admin)) .about-values{background:rgba(244,236,225,.72);border-color:#d8c8b3}
@@ -20,5 +27,21 @@ body:not(:has(.admin)) .about-card{background:#f8f2e9;border-color:#d8c8b3;box-s
 body:not(:has(.admin)) .about-icon{background:#ead9bf;color:#9b6420}
 body:not(:has(.admin)) .about-visit{background:linear-gradient(120deg,#17130f,#382619);box-shadow:0 20px 45px rgba(38,25,14,.14)}
 body:not(:has(.admin)) .collection-card{border-color:#cdb99e;box-shadow:0 18px 40px rgba(48,32,18,.11)}
-body:not(:has(.admin)) .contact-card{background:linear-gradient(140deg,#17130f,#332419)!important;border-color:#5b4128!important;box-shadow:0 15px 35px rgba(37,25,15,.13)}
+body:not(:has(.admin)) .contact-card{position:relative;overflow:hidden;background:linear-gradient(140deg,#17130f,#332419)!important;border-color:#5b4128!important;box-shadow:0 15px 35px rgba(37,25,15,.13);transition:transform .35s cubic-bezier(.2,.7,.2,1),box-shadow .35s ease,border-color .35s ease}
+body:not(:has(.admin)) .contact-card:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 0 0,rgba(215,164,83,.12),transparent 42%);opacity:0;transition:opacity .35s ease;pointer-events:none}
+body:not(:has(.admin)) .contact-card:hover{transform:translateY(-8px) scale(1.015);box-shadow:0 24px 48px rgba(37,25,15,.22);border-color:#b77b2d!important}
+body:not(:has(.admin)) .contact-card:hover:before{opacity:1}
+body:not(:has(.admin)) .contact-card .icon{display:inline-block;transition:transform .35s cubic-bezier(.2,.8,.2,1),filter .35s ease}
+body:not(:has(.admin)) .contact-card:hover .icon{transform:translateY(-3px) scale(1.12) rotate(-4deg);filter:drop-shadow(0 6px 8px rgba(0,0,0,.22))}
 body:not(:has(.admin)) input.search{background:#f7f1e8;border-color:#cdbda8}
+
+/* restrained entrance motion */
+body:not(:has(.admin)) main>*,body:not(:has(.admin)) .contact-card,body:not(:has(.admin)) .collection-card,body:not(:has(.admin)) .card{animation:teebReveal .7s cubic-bezier(.2,.7,.2,1) both}
+body:not(:has(.admin)) .contact-card:nth-child(2),body:not(:has(.admin)) .collection-card:nth-child(2),body:not(:has(.admin)) .card:nth-child(2){animation-delay:.08s}
+body:not(:has(.admin)) .contact-card:nth-child(3),body:not(:has(.admin)) .collection-card:nth-child(3),body:not(:has(.admin)) .card:nth-child(3){animation-delay:.16s}
+body:not(:has(.admin)) .card:nth-child(4){animation-delay:.24s}
+body:not(:has(.admin)) .btn{transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
+body:not(:has(.admin)) .btn:hover{transform:translateY(-3px);filter:brightness(1.04)}
+@keyframes teebReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes teebShine{0%,58%{left:-35%}78%,100%{left:125%}}
+@media(prefers-reduced-motion:reduce){body:not(:has(.admin)) *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
