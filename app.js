@@ -23,4 +23,43 @@ function cartChange(id,n){const p=getProduct(id);if(!p)return removeCart(id);con
 function removeCart(id){saveCart(readCart().filter(i=>i.id!==id));renderCart();}
 function checkoutSummary(){const el=document.getElementById('checkoutSummary');if(!el)return;const cart=readCart();const invalid=cart.some(i=>getProduct(i.id)?.price==null);const subtotal=cart.reduce((sum,i)=>sum+(Number(getProduct(i.id)?.price)||0)*i.qty,0);const delivery=subtotal>=50?0:2;el.innerHTML='<h2>Order Summary</h2>'+cart.map(i=>`<div class="summary-line"><span>${getProduct(i.id).name} × ${i.qty}</span><b>${money((Number(getProduct(i.id).price)||0)*i.qty)}</b></div>`).join('')+`<div class="summary-line"><span>Delivery</span><b>${money(delivery)}</b></div><div class="total">Total <span style="float:right">${money(subtotal+delivery)}</span></div>${invalid?'<p class="notes" style="margin-top:15px">Pricing is being confirmed for one or more items. Please return to the shop.</p>':''}`;const button=document.getElementById('placeOrderButton');if(button)button.disabled=invalid||!cart.length;}
 function bindFilters(){['search','category','sort','inStock'].forEach(id=>document.getElementById(id)?.addEventListener(id==='search'?'input':'change',renderShop));document.querySelectorAll('.cat').forEach(x=>x.addEventListener('change',()=>{document.querySelectorAll('.cat').forEach(y=>{if(y!==x)y.checked=false});const select=document.getElementById('category');if(select)select.value=x.checked?x.value:'All';renderShop();}));const params=new URLSearchParams(location.search);const category=params.get('category');if(category&&['Men','Women','Unisex'].includes(category)){const select=document.getElementById('category');if(select){select.value=category;renderShop();}}}
-document.addEventListener('DOMContentLoaded',async()=>{await loadProducts();updateCartCount();renderHome();renderShop();renderProduct();renderCart();checkoutSummary();bindFilters();});
+function setupMobileNav(){
+  const nav=document.querySelector('.nav');
+  const links=nav?.querySelector('.navlinks');
+  if(!nav||!links||nav.querySelector('.menu-toggle'))return;
+  const style=document.createElement('style');
+  style.textContent=`
+    .menu-toggle{display:none;background:transparent;border:0;width:42px;height:42px;padding:8px;align-items:center;justify-content:center;flex-direction:column;gap:5px;cursor:pointer;margin-left:8px;position:relative;z-index:31}
+    .menu-toggle span{display:block;width:23px;height:2px;background:#17130f;border-radius:99px;transition:transform .25s ease,opacity .25s ease}
+    .menu-toggle.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+    .menu-toggle.open span:nth-child(2){opacity:0}
+    .menu-toggle.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+    @media(max-width:900px){
+      .nav{height:82px!important;padding:0 18px!important;position:sticky!important;top:0!important;overflow:visible!important}
+      .brand img{width:120px!important;height:50px!important}
+      .menu-toggle{display:flex}
+      .navicons{margin-left:8px!important;gap:12px!important;font-size:21px!important}
+      .navlinks{display:none!important;position:absolute!important;top:calc(100% + 8px)!important;left:14px!important;right:14px!important;z-index:30!important;flex-direction:column!important;gap:0!important;padding:10px!important;background:rgba(249,244,236,.98)!important;border:1px solid #d8c8b3!important;border-radius:14px!important;box-shadow:0 18px 45px rgba(35,24,14,.18)!important;backdrop-filter:blur(14px)!important}
+      .navlinks.mobile-open{display:flex!important}
+      .navlinks a{display:block!important;padding:15px 14px!important;font-size:15px!important;letter-spacing:.6px!important;border-bottom:1px solid rgba(183,123,45,.14)!important}
+      .navlinks a:last-child{border-bottom:0!important}
+      .navlinks a:after{display:none!important}
+      .navlinks a.active{color:#a96e22!important}
+    }
+  `;
+  document.head.appendChild(style);
+  const button=document.createElement('button');
+  button.className='menu-toggle';
+  button.type='button';
+  button.setAttribute('aria-label','Open navigation menu');
+  button.setAttribute('aria-expanded','false');
+  button.innerHTML='<span></span><span></span><span></span>';
+  const icons=nav.querySelector('.navicons');
+  nav.insertBefore(button,icons||null);
+  const closeMenu=()=>{links.classList.remove('mobile-open');button.classList.remove('open');button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Open navigation menu');};
+  button.addEventListener('click',e=>{e.stopPropagation();const open=!links.classList.contains('mobile-open');links.classList.toggle('mobile-open',open);button.classList.toggle('open',open);button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Close navigation menu':'Open navigation menu');});
+  links.addEventListener('click',e=>{if(e.target.closest('a'))closeMenu();});
+  document.addEventListener('click',e=>{if(!nav.contains(e.target))closeMenu();});
+  window.addEventListener('resize',()=>{if(window.innerWidth>900)closeMenu();});
+}
+document.addEventListener('DOMContentLoaded',async()=>{setupMobileNav();await loadProducts();updateCartCount();renderHome();renderShop();renderProduct();renderCart();checkoutSummary();bindFilters();});
