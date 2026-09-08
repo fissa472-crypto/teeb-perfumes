@@ -12,16 +12,50 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Check JavaScript syntax
+      - name: Check all JavaScript syntax
         run: |
-          node --check catalog.js
-          node --check app.js
-          node --check checkout.js
-          node --check api/order.js
-          node --check admin-auth.js
-          node --check admin-products.js
-          node --check admin-orders.js
-          node --check cart-message.js
-          node --check collection-filter.js
-          node --check image-fix.js
-          node --check toast.js
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 | xargs -0 -n1 node --check
+      - name: Check local HTML asset references
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          root = Path('.')
+          missing = []
+
+          class Parser(HTMLParser):
+              def __init__(self, source):
+                  super().__init__()
+                  self.source = source
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  for key in ('href','src'):
+                      value = attrs.get(key)
+                      if not value:
+                          continue
+                      value = value.strip()
+                      if value.startswith(('#','http://','https://','mailto:','tel:','javascript:','data:')):
+                          continue
+                      path = urlsplit(value).path
+                      if not path or path.startswith('/'):
+                          continue
+                      target = (self.source.parent / path).resolve()
+                      try:
+                          target.relative_to(root.resolve())
+                      except ValueError:
+                          continue
+                      if not target.exists():
+                          missing.append(f'{self.source}: {value}')
+
+          for html in root.glob('*.html'):
+              p = Parser(html)
+              p.feed(html.read_text(encoding='utf-8'))
+
+          if missing:
+              print('Missing local references:')
+              print('\n'.join(missing))
+              raise SystemExit(1)
+          print('All local HTML asset references exist.')
+          PY
