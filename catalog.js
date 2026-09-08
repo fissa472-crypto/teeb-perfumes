@@ -1,4 +1,4 @@
-/* TEEB catalog: Supabase is the source of truth; the fallback keeps the storefront usable if the API is temporarily unavailable. */
+/* TEEB fallback catalog. The live catalog is loaded by app.js from Supabase. */
 const FALLBACK_CATALOG=[
 {id:'eros-najim',name:'Versace Eros Najim Parfum',price:70,priceLabel:'',category:'Men',notes:'Yellow Mandarin · Clary Sage · Saffron · Cardamom · Oud · Cedarwood · Caramel · Patchouli · Vetiver · Incense · Tonka',size:'100ml',stock:5,image:'https://images.matas.dk/trs/w890/encode/8011003895755_1_20251218100500.jpg'},
 {id:'dior-sauvage-edp',name:'Dior Sauvage Eau de Parfum',price:70,priceLabel:'',category:'Men',notes:'Bergamot · Vanilla · Patchouli · Spicy Citrus',size:'100ml',stock:5,image:'https://cdn.mart.ps/222439-thickbox_default/%D8%B9%D8%B7%D8%B1-%D8%B3%D9%88%D9%81%D8%A7%D8%AC-%D9%85%D9%86-%D8%AF%D9%8A%D9%88%D8%B1-%D9%84%D9%84%D8%B1%D8%AC%D8%A7%D9%84-%D8%B3%D8%B9%D8%A9-100-%D9%85%D9%84-sauvage-eau-de-parfum-edp-by-dior-for-men-100ml.jpg'},
@@ -20,16 +20,5 @@ const FALLBACK_CATALOG=[
 {id:'black-orchid',name:'Tom Ford Black Orchid Eau de Parfum',price:40,priceLabel:'',category:'Unisex',notes:'Black Orchid · Truffle · Patchouli · Vanilla',size:'100ml',stock:5,image:'https://f.nooncdn.com/p/pzsku/ZD74667586045F898DAA1Z/45/_/1779094688/31c7bf1b-b513-451f-af5e-6bb273d726bb.jpg'},
 {id:'ysl-y-edt',name:'Y Eau de Toilette',price:40,priceLabel:'',category:'Men',notes:'Lavender · Geranium · Cedarwood · Incense',size:'100ml',stock:5,image:'https://www.bigbrands.ae/wp-content/uploads/2022/11/YVES-SAINT-LAURENT-Y-M-EDT-100-ML-VAPO-500-%C3%97-500-px.png'}
 ];
-const SUPABASE_URL='https://qjcghudjcagpbywmtlnp.supabase.co';
-const SUPABASE_KEY='sb_publishable_032jnom6xlHAABnfHL9a6Q_4i1wzXNs';
-let CATALOG=FALLBACK_CATALOG;
-try{
-  const xhr=new XMLHttpRequest();
-  xhr.open('GET',`${SUPABASE_URL}/rest/v1/products?select=id,name,price,category,notes,size,stock,image&active=eq.true&order=created_at.asc`,false);
-  xhr.setRequestHeader('apikey',SUPABASE_KEY);
-  xhr.setRequestHeader('Authorization',`Bearer ${SUPABASE_KEY}`);
-  xhr.send(null);
-  if(xhr.status>=200&&xhr.status<300){const rows=JSON.parse(xhr.responseText);if(Array.isArray(rows)&&rows.length)CATALOG=rows.map(p=>({...p,price:p.price==null?null:Number(p.price),priceLabel:''}));}
-}catch(e){console.warn('Using fallback TEEB catalog',e);}
-if(typeof module!=='undefined') module.exports={CATALOG};
-if(typeof window!=='undefined') window.TEEB_CATALOG=CATALOG;
+if(typeof module!=='undefined') module.exports={CATALOG:FALLBACK_CATALOG};
+if(typeof window!=='undefined') window.TEEB_CATALOG=FALLBACK_CATALOG;
