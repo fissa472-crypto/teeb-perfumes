@@ -20,7 +20,7 @@ const FALLBACK_CATALOG=[
 {id:'new-ysl-black-opium-edt-90',name:'YSL Black Opium Eau de Toilette',price:null,category:'Women',notes:'Yves Saint Laurent · Black Opium · Eau de Toilette',size:'90 ml',stock:0,image:'https://perfumeoriginales.cl/cdn/shop/files/black-opium-ysl-edt-spray-30-oz-90-ml-w-3614271969545_1.jpg?v=1707343228&width=900',active:true},
 {id:'new-tom-ford-black-orchid-parfum-100',name:'Tom Ford Black Orchid Parfum',price:null,category:'Unisex',notes:'Tom Ford · Black Orchid · Parfum',size:'100 ml',stock:0,image:'https://perfumesmundiales.com/wp-content/uploads/2024/10/Perfume-Tom-Ford-Black-Orchid-Parfum.webp',active:true},
 {id:'new-lattafa-khamrah-100',name:'Lattafa Khamrah Eau de Parfum',price:null,category:'Unisex',notes:'Lattafa · Khamrah',size:'100 ml',stock:0,image:'https://emiratesoud.co.uk/cdn/shop/files/Khamrah-Perfume-100ml-EDP-Lattafa-153337882.jpg?v=1732556798&width=1946',active:true},
-{id:'new-tommy-duo-100x2',name:'Tommy Hilfiger Tommy + Tommy Girl Duo',price:null,category:'Unisex',notes:'Tommy Hilfiger · Tommy EDT + Tommy Girl EDT · 2-Piece Bundle',size:'2 × 100 ml',stock:0,image:'https://img.grouponcdn.com/deal/2J9skfNwcNKLyfdks8XaTmZ2MezX/2J-2048x1229/v1/t2001x1212.webp',active:true}
+{id:'new-tommy-duo-100x2',name:'Tommy Hilfiger Tommy + Tommy Girl Duo',price:null,category:'Bundle',notes:'Tommy Hilfiger · Tommy EDT for Men + Tommy Girl EDT for Women · 2-Piece Bundle',size:'2 × 100 ml',stock:0,image:'https://img.grouponcdn.com/deal/2J9skfNwcNKLyfdks8XaTmZ2MezX/2J-2048x1229/v1/t2001x1212.webp',active:true}
 ];
 if(typeof module!=='undefined') module.exports={CATALOG:FALLBACK_CATALOG};
 if(typeof window!=='undefined') window.TEEB_CATALOG=FALLBACK_CATALOG;
